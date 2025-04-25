@@ -264,8 +264,7 @@ public class MS2Archive : IMS2Archive {
             if (stream is MemoryStream ms) {
                 return ((Stream) ms, size);
             }
-            if (stream is KeepOpenStreamProxy proxy &&
-                proxy.Stream is MemoryStream proxyMs) {
+            if (stream is KeepOpenStreamProxy {Stream: MemoryStream} proxy) {
                 return (proxy, size);
             }
             byte[] buffer = new byte[size.EncodedSize];
@@ -282,28 +281,37 @@ public class MS2Archive : IMS2Archive {
         long offset = 0;
         var streams = new Stream[fileCount];
         var fileHeaders = new IMS2FileHeader[fileCount];
-        await using var fileInfoWriter = new StringWriter();
 
-        // calculate final data size
-        // write raw file headers
-        for (int i = 0; i < fileCount; i++) {
-            (Stream stream, IMS2SizeHeader size) = await archivingTasks[i].ConfigureAwait(false);
-            IMS2File file = files[i];
+        // Use StreamWriter over MemoryStream for cross-platform consistency
+        using var fileInfoMemoryStream = new MemoryStream();
+        await using (var fileInfoWriter = new StreamWriter(fileInfoMemoryStream, Encoding.ASCII, 1 << 10, true)) {
+            fileInfoWriter.NewLine = "\r\n";
+            for (int i = 0; i < fileCount; i++) {
+                (Stream stream, IMS2SizeHeader size) = await archivingTasks[i].ConfigureAwait(false);
+                IMS2File file = files[i];
 
-            streams[i] = stream;
+                streams[i] = stream;
 
-            await fileInfoCrypto.WriteAsync(fileInfoWriter, file.Info).ConfigureAwait(false);
+                await fileInfoCrypto.WriteAsync(fileInfoWriter, file.Info).ConfigureAwait(false);
 
-            IMS2FileHeader newFileHeader = new MS2FileHeader(size, file.Header.Id, offset, file.Header.CompressionType);
-            fileHeaders[i] = newFileHeader;
+                IMS2FileHeader newFileHeader = new MS2FileHeader(size, file.Header.Id, offset, file.Header.CompressionType);
+                fileHeaders[i] = newFileHeader;
 
-            await fileHeaderCrypto.WriteAsync(fileHeaderMemoryStream, newFileHeader).ConfigureAwait(false);
+                await fileHeaderCrypto.WriteAsync(fileHeaderMemoryStream, newFileHeader).ConfigureAwait(false);
 
-            offset += size.EncodedSize;
+                offset += size.EncodedSize;
+            }
+            await fileInfoWriter.FlushAsync();
         }
+        fileInfoMemoryStream.Position = 0;
+        fileHeaderMemoryStream.Position = 0;
+
+        // TODO: are those always compressed?
+        (Stream fileInfoEncryptedStream, IMS2SizeHeader fileInfoSize) = await CryptoRepository.GetEncryptionStreamAsync(fileInfoMemoryStream, fileInfoMemoryStream.Length, true).ConfigureAwait(false);
+        (Stream fileHeaderEncryptedStream, IMS2SizeHeader fileHeaderSize) = await CryptoRepository.GetEncryptionStreamAsync(fileHeaderMemoryStream, fileHeaderMemoryStream.Length, true).ConfigureAwait(false);
 
         // write data file
-        using (var mmf = MemoryMappedFile.CreateFromFile(dataStream, Guid.NewGuid().ToString(), offset, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, false)) {
+        using (var mmf = MemoryMappedFile.CreateFromFile(dataStream, null, offset, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, false)) {
             Task[] dataWritingTasks = fileHeaders.Select(async (fileHeader, i) => {
                 await Task.Yield();
 
@@ -315,13 +323,6 @@ public class MS2Archive : IMS2Archive {
 
             await Task.WhenAll(dataWritingTasks).ConfigureAwait(false);
         }
-
-        using var fileInfoMemoryStream = new MemoryStream(Encoding.ASCII.GetBytes(fileInfoWriter.ToString()));
-        fileHeaderMemoryStream.Position = 0;
-
-        // TODO: are those always compressed?
-        (Stream fileInfoEncryptedStream, IMS2SizeHeader fileInfoSize) = await CryptoRepository.GetEncryptionStreamAsync(fileInfoMemoryStream, fileInfoMemoryStream.Length, true).ConfigureAwait(false);
-        (Stream fileHeaderEncryptedStream, IMS2SizeHeader fileHeaderSize) = await CryptoRepository.GetEncryptionStreamAsync(fileHeaderMemoryStream, fileHeaderMemoryStream.Length, true).ConfigureAwait(false);
 
         // write header stream (m2h)
         await using var headerWriter = new BinaryWriter(headerStream, Encoding.ASCII, true);

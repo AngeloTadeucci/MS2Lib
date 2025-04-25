@@ -1,33 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Version>1.1.0</Version>
-    <Authors>Miyu</Authors>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <OutputPath>..\Debug\</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <OutputPath>..\Release\</OutputPath>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="DotNetZip" Version="1.13.8" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.8.6.7" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MiscUtils\MiscUtils\MiscUtils.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Version>1.1.0</Version>
+        <Authors>Miyu</Authors>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+        <OutputPath>..\Debug\</OutputPath>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <OutputPath>..\Release\</OutputPath>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="DotNetZip" Version="1.13.8"/>
+        <PackageReference Include="Portable.BouncyCastle" Version="1.8.6.7"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\MiscUtils\MiscUtils\MiscUtils.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Update="Properties\Resources.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>Resources.resx</DependentUpon>
+        </Compile>
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Update="Properties\Resources.resx">
+            <Generator>ResXFileCodeGenerator</Generator>
+            <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+    </ItemGroup>
 </Project>

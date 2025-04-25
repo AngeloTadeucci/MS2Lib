@@ -1,44 +1,37 @@
 ﻿using System;
 using System.IO;
 
-namespace MS2Lib
-{
-    public class MultiArrayFile : IMultiArray
-    {
-        public string FilePath { get; }
-        public int ArraySize { get; }
-        public int Count { get; }
+namespace MS2Lib;
 
-        private readonly Lazy<byte[][]> LazyFile; // TODO: maybe array of lazy (Lazy<byte[]>[])
+public class MultiArrayFile : IMultiArray {
 
-        public byte[] this[long index] => this.LazyFile.Value[index % this.Count];
+    private readonly Lazy<byte[][]> LazyFile; // TODO: maybe array of lazy (Lazy<byte[]>[])
 
-        public MultiArrayFile(string filePath, int count, int arraySize)
-        {
-            this.FilePath = filePath;
-            this.Count = count;
-            this.ArraySize = arraySize;
+    public MultiArrayFile(string filePath, int count, int arraySize) {
+        FilePath = filePath;
+        Count = count;
+        ArraySize = arraySize;
 
-            this.LazyFile = new Lazy<byte[][]>(this.CreateLazyImplementation);
-        }
+        LazyFile = new Lazy<byte[][]>(CreateLazyImplementation);
+    }
+    public string FilePath { get; }
+    public int ArraySize { get; }
+    public int Count { get; }
 
-        private byte[][] CreateLazyImplementation()
-        {
-            byte[][] result = new byte[this.Count][];
+    public byte[] this[long index] => LazyFile.Value[index % Count];
 
-            using (var br = new BinaryReader(File.OpenRead(this.FilePath)))
-            {
-                for (int i = 0; i < this.Count; i++)
-                {
-                    byte[] bytes = br.ReadBytes(this.ArraySize);
-                    if (bytes.Length == this.ArraySize)
-                    {
-                        result[i] = bytes;
-                    }
+    private byte[][] CreateLazyImplementation() {
+        byte[][] result = new byte[Count][];
+
+        using (var br = new BinaryReader(File.OpenRead(FilePath))) {
+            for (int i = 0; i < Count; i++) {
+                byte[] bytes = br.ReadBytes(ArraySize);
+                if (bytes.Length == ArraySize) {
+                    result[i] = bytes;
                 }
             }
-
-            return result;
         }
+
+        return result;
     }
 }

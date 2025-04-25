@@ -2,46 +2,39 @@
 using System.IO;
 using System.Resources;
 
-namespace MS2Lib
-{
-    public class MultiArrayResource : IMultiArray
-    {
-        public ResourceManager ResourceManager { get; }
-        public string ResourceName { get; }
-        public int ArraySize { get; }
-        public int Count { get; }
+namespace MS2Lib;
 
-        private readonly Lazy<byte[][]> LazyResource; // TODO: maybe array of lazy (Lazy<byte[]>[])
+public class MultiArrayResource : IMultiArray {
 
-        public byte[] this[long index] => this.LazyResource.Value[index % this.Count];
+    private readonly Lazy<byte[][]> LazyResource; // TODO: maybe array of lazy (Lazy<byte[]>[])
 
-        public MultiArrayResource(ResourceManager resourceManager, string resourceName, int count, int arraySize)
-        {
-            this.ResourceManager = resourceManager;
-            this.ResourceName = resourceName;
-            this.Count = count;
-            this.ArraySize = arraySize;
+    public MultiArrayResource(ResourceManager resourceManager, string resourceName, int count, int arraySize) {
+        ResourceManager = resourceManager;
+        ResourceName = resourceName;
+        Count = count;
+        ArraySize = arraySize;
 
-            this.LazyResource = new Lazy<byte[][]>(this.CreateLazyImplementation);
-        }
+        LazyResource = new Lazy<byte[][]>(CreateLazyImplementation);
+    }
+    public ResourceManager ResourceManager { get; }
+    public string ResourceName { get; }
+    public int ArraySize { get; }
+    public int Count { get; }
 
-        private byte[][] CreateLazyImplementation()
-        {
-            byte[][] result = new byte[this.Count][];
+    public byte[] this[long index] => LazyResource.Value[index % Count];
 
-            using (var br = new BinaryReader(new MemoryStream((byte[])this.ResourceManager.GetObject(this.ResourceName))))
-            {
-                for (int i = 0; i < this.Count; i++)
-                {
-                    byte[] bytes = br.ReadBytes(this.ArraySize);
-                    if (bytes.Length == this.ArraySize)
-                    {
-                        result[i] = bytes;
-                    }
+    private byte[][] CreateLazyImplementation() {
+        byte[][] result = new byte[Count][];
+
+        using (var br = new BinaryReader(new MemoryStream((byte[]) ResourceManager.GetObject(ResourceName)))) {
+            for (int i = 0; i < Count; i++) {
+                byte[] bytes = br.ReadBytes(ArraySize);
+                if (bytes.Length == ArraySize) {
+                    result[i] = bytes;
                 }
             }
-
-            return result;
         }
+
+        return result;
     }
 }

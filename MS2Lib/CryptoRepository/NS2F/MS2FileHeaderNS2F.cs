@@ -2,38 +2,34 @@
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MS2Lib.NS2F
-{
-    public sealed class MS2FileHeaderNS2F : IMS2FileHeaderCrypto
-    {
-        public Task<IMS2FileHeader> ReadAsync(Stream stream)
-        {
-            using var br = new BinaryReader(stream, Encoding.ASCII, true);
+namespace MS2Lib.NS2F;
 
-            var compressionType = (CompressionType)br.ReadUInt32();
-            uint id = br.ReadUInt32();
-            uint encodedSize = br.ReadUInt32();
-            long compressedSize = br.ReadInt64();
-            long size = br.ReadInt64();
-            long offset = br.ReadInt64();
+public sealed class MS2FileHeaderNS2F : IMS2FileHeaderCrypto {
+    public Task<IMS2FileHeader> ReadAsync(Stream stream) {
+        using var br = new BinaryReader(stream, Encoding.ASCII, true);
 
-            IMS2FileHeader fileHeader = new MS2FileHeader(encodedSize, compressedSize, size, id, offset, compressionType);
+        var compressionType = (CompressionType) br.ReadUInt32();
+        uint id = br.ReadUInt32();
+        uint encodedSize = br.ReadUInt32();
+        long compressedSize = br.ReadInt64();
+        long size = br.ReadInt64();
+        long offset = br.ReadInt64();
 
-            return Task.FromResult(fileHeader);
-        }
+        IMS2FileHeader fileHeader = new MS2FileHeader(encodedSize, compressedSize, size, id, offset, compressionType);
 
-        public Task WriteAsync(Stream stream, IMS2FileHeader fileHeader)
-        {
-            using var bw = new BinaryWriter(stream, Encoding.ASCII, true);
+        return Task.FromResult(fileHeader);
+    }
 
-            bw.Write((uint)fileHeader.CompressionType);
-            bw.Write(fileHeader.Id);
-            bw.Write((uint)fileHeader.Size.EncodedSize);
-            bw.Write(fileHeader.Size.CompressedSize);
-            bw.Write(fileHeader.Size.Size);
-            bw.Write(fileHeader.Offset);
+    public Task WriteAsync(Stream stream, IMS2FileHeader fileHeader) {
+        using var bw = new BinaryWriter(stream, Encoding.ASCII, true);
 
-            return Task.CompletedTask;
-        }
+        bw.Write((uint) fileHeader.CompressionType);
+        bw.Write(fileHeader.Id);
+        bw.Write((uint) fileHeader.Size.EncodedSize);
+        bw.Write(fileHeader.Size.CompressedSize);
+        bw.Write(fileHeader.Size.Size);
+        bw.Write(fileHeader.Offset);
+
+        return Task.CompletedTask;
     }
 }
